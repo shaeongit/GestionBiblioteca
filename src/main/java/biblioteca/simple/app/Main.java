@@ -32,6 +32,7 @@ public class Main {
         catalogo.alta(new Libro(2, "El nombre del viento", "2007", Formato.FISICO, "9788401352836", "Patrick Rothfuss"));
         catalogo.alta(new Pelicula(3, "El Padrino", "1972", Formato.FISICO, "rancis Ford Coppola", 175));
         catalogo.alta(new Pelicula(4, "Parásitos", "2019", Formato.FISICO, "Bong Joon-ho", 132));
+        catalogo.alta(new Videojuego(5, "Indiana Jones y el Gran Círculo", "2025", Formato.FISICO, "PS5", "Acción y aventura"));
 
         usuarios.add(new Usuario(1, "Juan"));
         usuarios.add(new Usuario(2, "María"));
