@@ -1,5 +1,8 @@
 package biblioteca.simple.modelo;
 
+import java.util.ArrayList;
+import java.util.List;
+
 // Clase que representa a un usuario de la biblioteca (persona que puede pedir materiales)
 public class Usuario {
     // Atributos privados (encapsulación):
@@ -33,4 +36,5 @@ public class Usuario {
     public void setNombre(String nombre) {
         this.nombre = nombre;
     }
+
 }

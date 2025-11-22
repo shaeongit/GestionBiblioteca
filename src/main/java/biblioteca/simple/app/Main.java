@@ -2,8 +2,7 @@ package biblioteca.simple.app;
 
 import biblioteca.simple.contratos.Prestable;
 import biblioteca.simple.modelo.*;
-import biblioteca.simple.servicios.Catalogo;
-import biblioteca.simple.servicios.PersistenciaUsuarios;
+import biblioteca.simple.servicios.*;
 
 import java.sql.SQLOutput;
 import java.util.ArrayList;
@@ -53,6 +52,7 @@ public class Main {
             System.out.println("5. Devolver Producto");
             System.out.println("6. Exportar usuarios");
             System.out.println("7. Importar usuarios");
+            System.out.println("8. Crear usuarios Manualmente");
             System.out.println("0. Salir");
             while(!sc.hasNextInt()) sc.next();
             op = sc.nextInt();
@@ -67,6 +67,7 @@ public class Main {
                 case 5 -> devolver();
                 case 6 -> exportarUsuarios();
                 case 7 -> importarUsuarios();
+                case 8 -> crearUsuarioManualmente();
                 case 0 -> System.out.println("Sayonara!");
                 default -> System.out.println("Opción no válida");
             }
@@ -75,6 +76,7 @@ public class Main {
     }
 
     private static void listar(){
+       // Listamos los productos
         List<Producto> lista = catalogo.listar();
 
         if(lista.isEmpty()){
@@ -82,10 +84,13 @@ public class Main {
             return;
         }
 
-        System.out.println("==Lista de productos ===");
+        System.out.println("=== Lista de productos ===");
 
         for(Producto p : lista) System.out.println("- " + p);
 
+        //Añadimos listar usuarios para verlos también
+        System.out.println("");
+        listarUsuarios();
 
     }
 
@@ -107,7 +112,7 @@ public class Main {
             System.out.println("No hay usuarios registrados");
             return;
         }
-        System.out.println("Lista usuarios");
+        System.out.println("=== Lista usuarios ===");
         usuarios.forEach( u ->
                         System.out.println("- Código : " + u.getId() + "| Nombre: " + u.getNombre() )
         );
@@ -120,7 +125,46 @@ public class Main {
                 .orElse(null);
     }
 
-    private static void prestar(){
+
+    // Crear usuario manualmente
+    private static void crearUsuarioManualmente() {
+        System.out.println("\n--- Crear Usuario Manualmente ---");
+
+        System.out.print("Ingresa código de usuario: ");
+        int codigo;
+        try {
+            codigo = sc.nextInt();
+            sc.nextLine();
+        } catch (Exception e) {
+            sc.nextLine(); // Limpiar buffer
+            System.out.println("Error: El código debe ser un número entero.");
+            return;
+        }
+
+        // Verificar si ya existe
+        if (getUsuarioPorCodigo(codigo) != null) {
+            System.out.println("Ya existe un usuario con el código: " + codigo + ".");
+            return;
+        }
+
+        System.out.print("Ingresa nombre del usuario: ");
+        String nombre = sc.nextLine();
+
+        // Validar que el nombre no esté vacío
+        if (nombre == null || nombre.trim().isEmpty()) {
+            System.out.println("El nombre no puede estar vacío.");
+            return;
+        }
+
+        // Crear el usuario
+        Usuario nuevoUsuario = new Usuario(codigo, nombre);
+        usuarios.add(nuevoUsuario);
+
+        System.out.println("Usuario creado correctamente. Nombre : " + nombre + " (Código: " + codigo + ")");
+    }
+
+
+    private static void prestar() {
 
         // 1)mostrar productos disponibles
 
@@ -128,17 +172,25 @@ public class Main {
                 .filter(p -> p instanceof Prestable pN && !pN.estaPrestado())
                 .collect(Collectors.toList());
 
-        if ( disponibles.isEmpty() ) {
+        if (disponibles.isEmpty()) {
             System.out.println("No hay productos para prestar");
             return;
         }
 
         System.out.println("-- PRODUCTOS DISPONIBLES --");
-        disponibles.forEach( p -> System.out.println("- ID: " + p.getId() + " | " + p));
+        disponibles.forEach(p -> System.out.println("- ID: " + p.getId() + " | " + p));
 
         System.out.println("Escribe el id del producto: ");
-        int id = sc.nextInt();
-        sc.nextLine();
+
+        int id;
+        try {
+            id = sc.nextInt();
+            sc.nextLine();
+        } catch (Exception e) {
+            sc.nextLine();
+            System.out.println("Error: El código debe ser un número entero. Operación cancelada.");
+            return;
+        }
 
         Producto pEncontrado = disponibles.stream()
                 .filter(p -> {
@@ -152,27 +204,60 @@ public class Main {
                 .findFirst()
                 .orElse(null);
 
-                 if (pEncontrado == null){
-                     System.out.println("El id no existe");
-                     return;
-                 }
+        if (pEncontrado == null) {
+            System.out.println("El id no existe");
+            return;
+        }
 
 
-                 listarUsuarios();
+        listarUsuarios();
 
-                 System.out.println("Ingresa código de usurio");
+        System.out.println("Ingresa código de usuario");
 
-                 int cUsuario = sc.nextInt();
-                 sc.nextLine();
-                 Usuario u1 = getUsuarioPorCodigo(cUsuario);
+        int cUsuario;
+        try {
+            cUsuario = sc.nextInt();
+            sc.nextLine();
+        } catch (Exception e) {
+            sc.nextLine();
+            System.out.println("Error: El código debe ser un número entero. Operación cancelada.");
+            return;
+        }
 
-                 if (u1 == null){
-                     System.out.println("Usuari ono encontrado");
-                 }
+        Usuario u1 = getUsuarioPorCodigo(cUsuario);
 
-                 Prestable pPrestable = (Prestable) pEncontrado;
-                 pPrestable.prestar(u1);
+        // Añadimos la opción de añadir el usuario si este no existe
+        if (u1 == null) {
+            System.out.println("Usuario no encontrado");
+            System.out.print("¿Desea crear el usuario ahora? (S/N): ");
+            String respuestaCU = sc.nextLine().trim().toUpperCase();
 
+            if (respuestaCU.equals("S") || respuestaCU.equals("SI")) {
+                System.out.print("Ingrese el nombre del usuario: ");
+                String nombre = sc.nextLine();
+
+                if (nombre != null && !nombre.trim().isEmpty()) {
+                    u1 = new Usuario(cUsuario, nombre);
+                    usuarios.add(u1);
+                    System.out.println("Usuario creado correctamente: " + nombre);
+
+                    // Continuar con el préstamo
+                    Prestable pPrestable = (Prestable) pEncontrado;
+                    pPrestable.prestar(u1);
+                    System.out.println("Préstamo realizado exitosamente");
+                } else {
+                    System.out.println("Operación cancelada. Nombre de usuario inválido.");
+                }
+            } else {
+                System.out.println("Operación de préstamo cancelada.");
+            }
+            return;
+
+        }else{
+            //Si el usuario existía añadimos el prestamos directamnete.
+            Prestable pPrestable = (Prestable) pEncontrado;
+            pPrestable.prestar(u1);
+        }
     }
 
 
@@ -184,7 +269,7 @@ public class Main {
                 .collect(Collectors.toList());
 
         if ( pPrestados.isEmpty() ) {
-            System.out.println("No hay productos para prestar");
+            System.out.println("No hay productos prestados");
             return;
         }
 
